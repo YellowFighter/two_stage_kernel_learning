@@ -4,7 +4,7 @@ Created on Wed Dec 12 17:49:47 2018
 
 @author: Lenovo0705
 此程序用来仿真two-stage sampled learning theory on distributions文章的第二个例子aerosol prediction
-数据集来源于MISR1数据集"E:/jcs工作/定轨/reproduce/phase_learn-master/data/MISR1.mat"
+数据集来源于MISR1数据集"E:/two_stage/phase_learn_master/data/MISR1.mat"
 文章分别对加噪和不加噪分别进行了研究
 最新的方法在Testing and Learning on Distributions with Symmetric Noise Invariance中取得了很好的效果
 程序参考Phase_Neural_Network_Aerosol.ipynb
@@ -19,9 +19,11 @@ from ite.cost.x_kernel import Kernel
 from sklearn.metrics import mean_squared_error
 from phase_learn_master import aux_fct
 from phase_learn_master import phase_fourier_dr_nn
+import warnings
+warnings.filterwarnings('ignore')
 
 
-path = 'E:/jcs工作/定轨/reproduce/phase_learn-master/' #Change path 
+path = 'E:/two_stage/phase_learn_master/data/' #Change path 
 # Load Dataset into features and labels 产生数据所用的方法是原程序中的，此处仅为方便故调用
 misr_data_x, misr_data_y = aux_fct.load_data(path, random = True)
 variance = np.var(np.concatenate(misr_data_x), axis = 0) # For calculating signal to noise ratio
@@ -133,7 +135,7 @@ def testresult():  #用于在测试集上验证结果，与上面函数的差别
 #    print ("RMSE is ",rmse)
 #    plt.scatter(b,a)
     mse = mean_squared_error(y_pred,y_test)
-    rmse = sqrt(mse)
+    rmse = np.sqrt(mse)
     print ("RMSE is ",rmse)
     plt.scatter(y_pred,y_test)
     plt.show()
