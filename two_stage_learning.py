@@ -41,6 +41,15 @@ m = X_val.shape[0]
 #验证集160组数据用来调参，主要是用来在给定的范围内选择最优的theta和lamda，测试集160组，用于验证方法的可行性
 #在数据集load的过程中已经包含了数据集的打乱，通过aux_fct.load_data(path, random = True，seed=1)改变不同的seed值来重复不同划分数据集以取平均
 #来使结果更具说服力
+
+class kernel_learning:
+        
+        def __init__(self,theta,lamda):
+                self.theta = theta
+                self.lamda = lamda
+                self.k2 = Kernel({'name': 'RBF','sigma': theta})
+                self.co = ite.cost.BKExpected(kernel=k2)
+
 def search_best_para():     #用验证集来选取最优参数theta和lamda的函数，例子2和例子1最终确定的最优参数theta的值差别很大
     minerror = 100000
     for theta in np.logspace(-15,10,num=26,base=2):
