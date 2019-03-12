@@ -44,11 +44,35 @@ m = X_val.shape[0]
 
 class kernel_learning:
         
-        def __init__(self,theta,lamda):
-                self.theta = theta
-                self.lamda = lamda
-                self.k2 = Kernel({'name': 'RBF','sigma': theta})
-                self.co = ite.cost.BKExpected(kernel=k2)
+    def com_kernel(self,theta,lamda):
+        self.theta = theta
+        self.lamda = lamda
+        self.k2 = Kernel({'name': 'RBF','sigma': theta})
+        self.co = ite.cost.BKExpected(kernel=k2)
+        return self.co
+
+    def com_K(l,self): #l为训练集的样本个数
+        self.K = np.zeros((l,l))                       
+        for i in range(l):
+            for j in range(l):
+                self.K[i][j] = self.co.estimation(X_train[i],X_train[j])      #计算K矩阵
+        return self.K
+    
+    def com_k(self,l,m,t,dataset):  #当为训练时dataset使用val集，当为验证效果时用test集,l为训练集样本个数,m为验证集样本数,t为dataset集中的每一个
+        self.k = np.zeros((l,1))
+        for i in range(l):
+            self.k[i] = self.co.estimation(X_train[i],dataset[t])          #给定一个新的样本，他与480组训练样本的每一个instance都要进行kernel的运算
+        
+        self.y_pred = np.zeros(m)                        
+        for i in range(m):
+            self.k = com_k(i,dataset)        
+                self.y_pred[i] = np.matmul(np.matmul(y_train.reshape(1,-1),np.linalg.inv((self.K+l*lamda*np.eye(l)))),self.k)#用于计算经过kernel embedding之后的值
+
+class search_best_para(kernel_learning):
+        minerror = 100000
+        for theta in np.logspace(-15,10,num=26,base=2):
+                for lamda in np.logspace(-65,-3,num=63,base=2):   #两个参数的搜索范围，为以2为底的指数，注意写法
+                        co = kernel_learning.com_kernel(theta,lamda)
 
 def search_best_para():     #用验证集来选取最优参数theta和lamda的函数，例子2和例子1最终确定的最优参数theta的值差别很大
     minerror = 100000
