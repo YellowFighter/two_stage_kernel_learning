@@ -51,29 +51,68 @@ class kernel_learning:
         self.co = ite.cost.BKExpected(kernel=k2)
         return self.co
 
-    def com_K(l,self): #l为训练集的样本个数
+    def com_K(self): #l为训练集的样本个数
         self.K = np.zeros((l,l))                       
         for i in range(l):
             for j in range(l):
                 self.K[i][j] = self.co.estimation(X_train[i],X_train[j])      #计算K矩阵
         return self.K
     
-    def com_k(self,l,m,t,dataset):  #当为训练时dataset使用val集，当为验证效果时用test集,l为训练集样本个数,m为验证集样本数,t为dataset集中的每一个
+    def com_k(self,t,dataset):  #当为训练时dataset使用val集，当为验证效果时用test集,l为训练集样本个数,m为验证集样本数,t为dataset集中的每一个
         self.k = np.zeros((l,1))
         for i in range(l):
             self.k[i] = self.co.estimation(X_train[i],dataset[t])          #给定一个新的样本，他与480组训练样本的每一个instance都要进行kernel的运算
-        
+        return self.k
+
+    def com_y(self,m,dataset):    
         self.y_pred = np.zeros(m)                        
         for i in range(m):
             self.k = com_k(i,dataset)        
                 self.y_pred[i] = np.matmul(np.matmul(y_train.reshape(1,-1),np.linalg.inv((self.K+l*lamda*np.eye(l)))),self.k)#用于计算经过kernel embedding之后的值
+        return self.y_pred
 
-class search_best_para(kernel_learning):
+class val_kernel(kernel_learning):
+        
+    def search_best_para(self):
         minerror = 100000
         for theta in np.logspace(-15,10,num=26,base=2):
-                for lamda in np.logspace(-65,-3,num=63,base=2):   #两个参数的搜索范围，为以2为底的指数，注意写法
-                        co = kernel_learning.com_kernel(theta,lamda)
-
+            for lamda in np.logspace(-65,-3,num=63,base=2):   #两个参数的搜索范围，为以2为底的指数，注意写法
+                co = kernel_learning.com_kernel(theta,lamda)
+                y_pred = kernel_learning.com_y(m,X_val)
+                sumerror = mean_squared_error(y_pred,y_val)
+                if sumerror < minerror:
+                    minerror = sumerror
+                    besttheta = theta
+                    bestlamda = lamda
+        figure = plt.figure(1)
+        plt.scatter(y_pred,y_val)
+        plt.show()
+        print (besttheta)
+        print (bestlamda)
+        
+    def testresult(self):
+        theta = 128
+        lamda = 6.103515625e-05
+        k2 = Kernel({'name': 'RBF','sigma': theta})
+        co = ite.cost.BKExpected(kernel=k2)
+        y_pred = kernel_learning.com_y(m,X_test)
+        figure = plt.figure(3)
+        plt.title("Relation on test dataset")
+        plt.ylabel("True AOD")
+        plt.xlabel("Prediction of AOD")
+        plt.xlim(-0.01,1.25)
+        plt.ylim(-0.01,1.25)
+        #    a = np.delete(y_test,50,axis=0)      #此程序所使用的
+        #    b = np.delete(y_pred,50,axis=0)
+        #    mse = mean_squared_error(b,a)
+        #    rmse = sqrt(mse)
+        #    print ("RMSE is ",rmse)
+        #    plt.scatter(b,a)
+        mse = mean_squared_error(y_pred,y_test)
+        rmse = np.sqrt(mse)
+        print ("RMSE is ",rmse)
+        plt.scatter(y_pred,y_test)
+        plt.show()
 def search_best_para():     #用验证集来选取最优参数theta和lamda的函数，例子2和例子1最终确定的最优参数theta的值差别很大
     minerror = 100000
     for theta in np.logspace(-15,10,num=26,base=2):
