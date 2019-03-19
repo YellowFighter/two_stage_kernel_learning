@@ -49,27 +49,23 @@ class kernel_learning:
         self.lamda = lamda
         
     def com_kernel(self):
-        k2 = Kernel({'name': 'RBF','sigma': theta})
+        k2 = Kernel({'name': 'RBF','sigma': self.theta})
         self.co = ite.cost.BKExpected(kernel=k2)
         return self.co
 
-    def com_K(self): #l为训练集的样本个数
-        K = np.zeros((l,l))                       
-        for i in range(l):
-            for j in range(l):
-                K[i][j] = self.co.estimation(X_train[i],X_train[j])      #计算K矩阵
-        return K
-    
     def com_k(self,t,dataset):  #当为训练时dataset使用val集，当为验证效果时用test集,l为训练集样本个数,m为验证集样本数,t为dataset集中的每一个
         k = np.zeros((l,1))
         for i in range(l):
             k[i] = self.co.estimation(X_train[i],dataset[t])          #给定一个新的样本，他与480组训练样本的每一个instance都要进行kernel的运算
-        return k
-
-    def com_y(self,dataset):    
+        return k       
+    def com_y(self,dataset):   
+        K = np.zeros((l,l))
+        for i in range(l):
+            for j in range(l):
+                K[i][j] = self.co.estimation(X_train[i],X_train[j])      #计算K矩阵
         y_pred = np.zeros(m)                        
         for i in range(m):       
-            y_pred[i] = np.matmul(np.matmul(y_train.reshape(1,-1),np.linalg.inv((self.com_K()+l*self.lamda*np.eye(l)))),self.com_k(i,dataset))#用于计算经过kernel embedding之后的值
+            y_pred[i] = np.matmul(np.matmul(y_train.reshape(1,-1),np.linalg.inv((K+l*self.lamda*np.eye(l)))),self.com_k(i,dataset))#用于计算经过kernel embedding之后的值
         return y_pred
 
     def search_best_para(self):
@@ -78,7 +74,7 @@ class kernel_learning:
             for lamda in np.logspace(-65,-3,num=63,base=2):   #两个参数的搜索范围，为以2为底的指数，注意写法
                 co = self.com_kernel(theta,lamda)
                 y_pred = self.com_y(X_val)
-                sumerror = mean_squared_error(self.y_pred1,y_val)
+                sumerror = mean_squared_error(y_pred,y_val)
                 if sumerror < minerror:
                     minerror = sumerror
                     besttheta = theta
@@ -88,8 +84,8 @@ class kernel_learning:
         plt.show()
         print (besttheta)
         print (bestlamda)
-#a = kernel_learning()
-#b = a.com_kernel(128,6.103515625e-05)
+#a = kernel_learning(128,6.103515625e-05)
+#b = a.com_kernel()
 #c = a.com_K()
 #d = a.com_k(3,X_train)
 #e = a.com_y(X_train)
