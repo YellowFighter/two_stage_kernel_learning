@@ -44,45 +44,41 @@ m = X_val.shape[0]
 
 class kernel_learning:
         
-    def com_kernel(self,theta,lamda):
+    def __init__(self,theta,lamda):
         self.theta = theta
         self.lamda = lamda
-        self.k2 = Kernel({'name': 'RBF','sigma': theta})
-        self.co = ite.cost.BKExpected(kernel=self.k2)
+        
+    def com_kernel(self):
+        k2 = Kernel({'name': 'RBF','sigma': theta})
+        self.co = ite.cost.BKExpected(kernel=k2)
         return self.co
 
     def com_K(self): #l为训练集的样本个数
-        self.K = np.zeros((l,l))                       
+        K = np.zeros((l,l))                       
         for i in range(l):
             for j in range(l):
-                self.K[i][j] = self.co.estimation(X_train[i],X_train[j])      #计算K矩阵
-        return self.K
+                K[i][j] = self.co.estimation(X_train[i],X_train[j])      #计算K矩阵
+        return K
     
     def com_k(self,t,dataset):  #当为训练时dataset使用val集，当为验证效果时用test集,l为训练集样本个数,m为验证集样本数,t为dataset集中的每一个
-        self.k = np.zeros((l,1))
+        k = np.zeros((l,1))
         for i in range(l):
-            self.k[i] = self.co.estimation(X_train[i],dataset[t])          #给定一个新的样本，他与480组训练样本的每一个instance都要进行kernel的运算
-        return self.k
+            k[i] = self.co.estimation(X_train[i],dataset[t])          #给定一个新的样本，他与480组训练样本的每一个instance都要进行kernel的运算
+        return k
 
     def com_y(self,dataset):    
-        self.y_pred = np.zeros(m)                        
-        for i in range(m):
-            self.com_k(i,dataset)        
-            self.y_pred[i] = np.matmul(np.matmul(y_train.reshape(1,-1),np.linalg.inv((self.K+l*self.lamda*np.eye(l)))),self.k)#用于计算经过kernel embedding之后的值
-        return self.y_pred
+        y_pred = np.zeros(m)                        
+        for i in range(m):       
+            y_pred[i] = np.matmul(np.matmul(y_train.reshape(1,-1),np.linalg.inv((self.com_K()+l*self.lamda*np.eye(l)))),self.com_k(i,dataset))#用于计算经过kernel embedding之后的值
+        return y_pred
 
-
-
-
-class val_kernel(kernel_learning):
-        
     def search_best_para(self):
         minerror = 100000
         for theta in np.logspace(-15,10,num=26,base=2):
             for lamda in np.logspace(-65,-3,num=63,base=2):   #两个参数的搜索范围，为以2为底的指数，注意写法
-                co = kernel_learning.com_kernel(theta,lamda)
-                y_pred = kernel_learning.com_y(m,X_val)
-                sumerror = mean_squared_error(y_pred,y_val)
+                co = self.com_kernel(theta,lamda)
+                y_pred = self.com_y(X_val)
+                sumerror = mean_squared_error(self.y_pred1,y_val)
                 if sumerror < minerror:
                     minerror = sumerror
                     besttheta = theta
@@ -92,30 +88,56 @@ class val_kernel(kernel_learning):
         plt.show()
         print (besttheta)
         print (bestlamda)
+#a = kernel_learning()
+#b = a.com_kernel(128,6.103515625e-05)
+#c = a.com_K()
+#d = a.com_k(3,X_train)
+#e = a.com_y(X_train)
+#f = kernel_learning()
+
+
+#class val_kernel(kernel_learning):
+#        
+#    def search_best_para(self):
+#        minerror = 100000
+#        for theta in np.logspace(-15,10,num=26,base=2):
+#            for lamda in np.logspace(-65,-3,num=63,base=2):   #两个参数的搜索范围，为以2为底的指数，注意写法
+#                co = self.com_kernel(theta,lamda)
+#                y_pred = self.com_y(X_val)
+#                sumerror = mean_squared_error(y_pred,y_val)
+#                if sumerror < minerror:
+#                    minerror = sumerror
+#                    besttheta = theta
+#                    bestlamda = lamda
+#        figure = plt.figure(1)
+#        plt.scatter(y_pred,y_val)
+#        plt.show()
+#        print (besttheta)
+#        print (bestlamda)
         
-    def testresult(self):
-        theta = 128
-        lamda = 6.103515625e-05
-        k2 = Kernel({'name': 'RBF','sigma': theta})
-        co = ite.cost.BKExpected(kernel=k2)
-        y_pred = kernel_learning.com_y(m,X_test)
-        figure = plt.figure(3)
-        plt.title("Relation on test dataset")
-        plt.ylabel("True AOD")
-        plt.xlabel("Prediction of AOD")
-        plt.xlim(-0.01,1.25)
-        plt.ylim(-0.01,1.25)
-        #    a = np.delete(y_test,50,axis=0)      #此程序所使用的
-        #    b = np.delete(y_pred,50,axis=0)
-        #    mse = mean_squared_error(b,a)
-        #    rmse = sqrt(mse)
-        #    print ("RMSE is ",rmse)
-        #    plt.scatter(b,a)
-        mse = mean_squared_error(y_pred,y_test)
-        rmse = np.sqrt(mse)
-        print ("RMSE is ",rmse)
-        plt.scatter(y_pred,y_test)
-        plt.show()
+#    def testresult(self):
+#        theta = 128
+#        lamda = 6.103515625e-05
+#        k2 = Kernel({'name': 'RBF','sigma': theta})
+#        co = ite.cost.BKExpected(kernel=k2)
+#        y_pred = kernel_learning.com_y(m,X_test)
+#        figure = plt.figure(3)
+#        plt.title("Relation on test dataset")
+#        plt.ylabel("True AOD")
+#        plt.xlabel("Prediction of AOD")
+#        plt.xlim(-0.01,1.25)
+#        plt.ylim(-0.01,1.25)
+#        #    a = np.delete(y_test,50,axis=0)      #此程序所使用的
+#        #    b = np.delete(y_pred,50,axis=0)
+#        #    mse = mean_squared_error(b,a)
+#        #    rmse = sqrt(mse)
+#        #    print ("RMSE is ",rmse)
+#        #    plt.scatter(b,a)
+#        mse = mean_squared_error(y_pred,y_test)
+#        rmse = np.sqrt(mse)
+#        print ("RMSE is ",rmse)
+#        plt.scatter(y_pred,y_test)
+#        plt.show()
         
         
         
