@@ -68,12 +68,13 @@ class kernel_learning:
             y_pred[i] = np.matmul(np.matmul(y_train.reshape(1,-1),np.linalg.inv((K+l*self.lamda*np.eye(l)))),self.com_k(i,dataset))#用于计算经过kernel embedding之后的值
         return y_pred
 
-    def search_best_para(self):
+def search_best_para():
         minerror = 100000
         for theta in np.logspace(-15,10,num=26,base=2):
             for lamda in np.logspace(-65,-3,num=63,base=2):   #两个参数的搜索范围，为以2为底的指数，注意写法
-                co = self.com_kernel(theta,lamda)
-                y_pred = self.com_y(X_val)
+                a = kernel_learning(theta,lamda)
+                b = a.com_kernel()
+                y_pred = a.com_y(X_val)
                 sumerror = mean_squared_error(y_pred,y_val)
                 if sumerror < minerror:
                     minerror = sumerror
@@ -90,6 +91,30 @@ class kernel_learning:
 #d = a.com_k(3,X_train)
 #e = a.com_y(X_train)
 #f = kernel_learning()
+
+def testresult():  #用于在测试集上验证结果，与上面函数的差别主要在于k_small的用的是X_test而搜索参数用的是X_val
+    theta = 128
+    lamda = 6.103515625e-05 
+    a = kernel_learning(theta,lamda)
+    b = a.com_kernel()
+    y_pred = a.com_y(X_test)
+    figure = plt.figure(3)
+    plt.title("Relation on test dataset")
+    plt.ylabel("True AOD")
+    plt.xlabel("Prediction of AOD")
+    plt.xlim(-0.01,1.25)
+    plt.ylim(-0.01,1.25)
+ #    a = np.delete(y_test,50,axis=0)      #此程序所使用的
+ #    b = np.delete(y_pred,50,axis=0)
+ #    mse = mean_squared_error(b,a)
+ #    rmse = sqrt(mse)
+ #    print ("RMSE is ",rmse)
+ #    plt.scatter(b,a)
+    mse = mean_squared_error(y_pred,y_test)
+    rmse = np.sqrt(mse)
+    print ("RMSE is ",rmse)
+    plt.scatter(y_pred,y_test)
+    plt.show()
 
 
 #class val_kernel(kernel_learning):
@@ -239,5 +264,5 @@ class kernel_learning:
 # #search_best_para()
 # #plot_bestpara_val()
 # #testresult()
-# 
 # =============================================================================
+
