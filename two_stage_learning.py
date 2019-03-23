@@ -22,7 +22,6 @@ from phase_learn_master import phase_fourier_dr_nn
 import warnings
 warnings.filterwarnings('ignore')
 
-
 path = 'E:/two_stage/phase_learn_master/data/' #Change path 
 # Load Dataset into features and labels 产生数据所用的方法是原程序中的，此处仅为方便故调用
 misr_data_x, misr_data_y = aux_fct.load_data(path, random = True)
@@ -50,7 +49,7 @@ class kernel_learning:
         
     def com_kernel(self):
         k2 = Kernel({'name': 'RBF','sigma': self.theta})
-        self.co = ite.cost.BKExpected(kernel=k2)
+        self.co = ite.cost.BKExpected(kernel=k2)     #此处参考ite的用法
         return self.co
 
     def com_k(self,t,dataset):  #当为训练时dataset使用val集，当为验证效果时用test集,l为训练集样本个数,m为验证集样本数,t为dataset集中的每一个
@@ -65,7 +64,8 @@ class kernel_learning:
                 K[i][j] = self.co.estimation(X_train[i],X_train[j])      #计算K矩阵
         y_pred = np.zeros(m)                        
         for i in range(m):       
-            y_pred[i] = np.matmul(np.matmul(y_train.reshape(1,-1),np.linalg.inv((K+l*self.lamda*np.eye(l)))),self.com_k(i,dataset))#用于计算经过kernel embedding之后的值
+            y_pred[i] = np.matmul(np.matmul(y_train.reshape(1,-1),np.linalg.inv((K+l*self.lamda*np.eye(l)))),\
+                  self.com_k(i,dataset))#用于计算经过kernel embedding之后的值
         return y_pred
 
 def search_best_para():
@@ -80,189 +80,44 @@ def search_best_para():
                     minerror = sumerror
                     besttheta = theta
                     bestlamda = lamda
-        figure = plt.figure(1)
+        f = plt.figure(1)
         plt.scatter(y_pred,y_val)
         plt.show()
         print (besttheta)
         print (bestlamda)
-#a = kernel_learning(128,6.103515625e-05)
-#b = a.com_kernel()
-#c = a.com_K()
-#d = a.com_k(3,X_train)
-#e = a.com_y(X_train)
-#f = kernel_learning()
 
+def plot_bestpara_val():  #用于画出验证集
+    theta = 128
+    lamda = 6.103515625e-05 
+    a = kernel_learning(theta,lamda)
+    b = a.com_kernel()
+    y_pred = a.com_y(X_val)
+    f = plt.figure(2)
+    plt.scatter(y_pred,y_val)
+    plt.title("Relation on validation dataset")
+    plt.ylabel("Entroy")
+    plt.xlabel("Embedding of validation dataset")
+    plt.show()
+    
 def testresult():  #用于在测试集上验证结果，与上面函数的差别主要在于k_small的用的是X_test而搜索参数用的是X_val
     theta = 128
     lamda = 6.103515625e-05 
     a = kernel_learning(theta,lamda)
     b = a.com_kernel()
     y_pred = a.com_y(X_test)
-    figure = plt.figure(3)
+    f = plt.figure(3)
     plt.title("Relation on test dataset")
     plt.ylabel("True AOD")
     plt.xlabel("Prediction of AOD")
     plt.xlim(-0.01,1.25)
     plt.ylim(-0.01,1.25)
- #    a = np.delete(y_test,50,axis=0)      #此程序所使用的
- #    b = np.delete(y_pred,50,axis=0)
- #    mse = mean_squared_error(b,a)
- #    rmse = sqrt(mse)
- #    print ("RMSE is ",rmse)
- #    plt.scatter(b,a)
     mse = mean_squared_error(y_pred,y_test)
     rmse = np.sqrt(mse)
     print ("RMSE is ",rmse)
     plt.scatter(y_pred,y_test)
     plt.show()
 
-
-#class val_kernel(kernel_learning):
-#        
-#    def search_best_para(self):
-#        minerror = 100000
-#        for theta in np.logspace(-15,10,num=26,base=2):
-#            for lamda in np.logspace(-65,-3,num=63,base=2):   #两个参数的搜索范围，为以2为底的指数，注意写法
-#                co = self.com_kernel(theta,lamda)
-#                y_pred = self.com_y(X_val)
-#                sumerror = mean_squared_error(y_pred,y_val)
-#                if sumerror < minerror:
-#                    minerror = sumerror
-#                    besttheta = theta
-#                    bestlamda = lamda
-#        figure = plt.figure(1)
-#        plt.scatter(y_pred,y_val)
-#        plt.show()
-#        print (besttheta)
-#        print (bestlamda)
-        
-#    def testresult(self):
-#        theta = 128
-#        lamda = 6.103515625e-05
-#        k2 = Kernel({'name': 'RBF','sigma': theta})
-#        co = ite.cost.BKExpected(kernel=k2)
-#        y_pred = kernel_learning.com_y(m,X_test)
-#        figure = plt.figure(3)
-#        plt.title("Relation on test dataset")
-#        plt.ylabel("True AOD")
-#        plt.xlabel("Prediction of AOD")
-#        plt.xlim(-0.01,1.25)
-#        plt.ylim(-0.01,1.25)
-#        #    a = np.delete(y_test,50,axis=0)      #此程序所使用的
-#        #    b = np.delete(y_pred,50,axis=0)
-#        #    mse = mean_squared_error(b,a)
-#        #    rmse = sqrt(mse)
-#        #    print ("RMSE is ",rmse)
-#        #    plt.scatter(b,a)
-#        mse = mean_squared_error(y_pred,y_test)
-#        rmse = np.sqrt(mse)
-#        print ("RMSE is ",rmse)
-#        plt.scatter(y_pred,y_test)
-#        plt.show()
-        
-        
-        
-# =============================================================================
-# def search_best_para():     #用验证集来选取最优参数theta和lamda的函数，例子2和例子1最终确定的最优参数theta的值差别很大
-#     minerror = 100000
-#     for theta in np.logspace(-15,10,num=26,base=2):
-#         for lamda in np.logspace(-65,-3,num=63,base=2):   #两个参数的搜索范围，为以2为底的指数，注意写法
-#             k2 = Kernel({'name': 'RBF','sigma': theta})
-#             co = ite.cost.BKExpected(kernel=k2)           #此处参考ite的用法
-#             
-#             K = np.zeros((l,l))                       
-#             for i in range(l):
-#                 for j in range(l):
-#                     K[i][j] = co.estimation(X_train[i],X_train[j])      #计算K矩阵
-#             def k_small(t):
-#                 k = np.zeros((l,1))
-#                 for i in range(l):
-#                     k[i] = co.estimation(X_train[i],X_val[t])          #给定一个新的样本，他与480组训练样本的每一个instance都要进行kernel的运算
-#                 return k
-# 
-#             y_pred = np.zeros(m)                        
-#             for i in range(m):
-#                 k = k_small(i)        
-#                 y_pred[i] = np.matmul(np.matmul(y_train.reshape(1,-1),np.linalg.inv((K+l*lamda*np.eye(l)))),k)#用于计算经过kernel embedding之后的值
-#             sumerror = mean_squared_error(y_pred,y_val)
-#             if sumerror < minerror:
-#                 minerror = sumerror
-#                 besttheta = theta
-#                 bestlamda = lamda
-#         
-#     figure = plt.figure(1)
-#     plt.scatter(y_pred,y_val)
-#     plt.show()
-#     print (besttheta)
-#     print (bestlamda)
-# 
-# 
-# def plot_bestpara_val():  #用于画出验证集
-#     theta = 128
-#     lamda = 6.103515625e-05
-#     k2 = Kernel({'name': 'RBF','sigma': theta})
-#     co = ite.cost.BKExpected(kernel=k2)
-#     
-#     K = np.zeros((l,l))
-#     for i in range(l):
-#         for j in range(l):
-#             K[i][j] = co.estimation(X_train[i],X_train[j])
-#     def k_small(t):
-#         k = np.zeros((l,1))
-#         for i in range(l):
-#             k[i] = co.estimation(X_train[i],X_val[t])
-#         return k
-#     
-#     y_pred = np.zeros(m)
-#     for i in range(m):
-#         k = k_small(i)        
-#         y_pred[i] = np.matmul(np.matmul(y_train.reshape(1,-1),np.linalg.inv((K+l*lamda*np.eye(l)))),k)
-#     figure = plt.figure(2)
-#     plt.scatter(y_pred,y_val)
-#     plt.title("Relation on validation dataset")
-#     plt.ylabel("Entroy")
-#     plt.xlabel("Embedding of validation dataset")
-#     plt.show()
-# 
-# def testresult():  #用于在测试集上验证结果，与上面函数的差别主要在于k_small的用的是X_test而搜索参数用的是X_val
-#     theta = 128
-#     lamda = 6.103515625e-05
-#     k2 = Kernel({'name': 'RBF','sigma': theta})
-#     co = ite.cost.BKExpected(kernel=k2)
-#     
-#     K = np.zeros((l,l))
-#     for i in range(l):
-#         for j in range(l):
-#             K[i][j] = co.estimation(X_train[i],X_train[j])
-#     def k_small(t):
-#         k = np.zeros((l,1))
-#         for i in range(l):
-#             k[i] = co.estimation(X_train[i],X_test[t])
-#         return k
-#     
-#     y_pred = np.zeros(m)
-#     for i in range(m):
-#         k = k_small(i)        
-#         y_pred[i] = np.matmul(np.matmul(y_train.reshape(1,-1),np.linalg.inv((K+l*lamda*np.eye(l)))),k)
-#     figure = plt.figure(3)
-#     plt.title("Relation on test dataset")
-#     plt.ylabel("True AOD")
-#     plt.xlabel("Prediction of AOD")
-#     plt.xlim(-0.01,1.25)
-#     plt.ylim(-0.01,1.25)
-# #    a = np.delete(y_test,50,axis=0)      #此程序所使用的
-# #    b = np.delete(y_pred,50,axis=0)
-# #    mse = mean_squared_error(b,a)
-# #    rmse = sqrt(mse)
-# #    print ("RMSE is ",rmse)
-# #    plt.scatter(b,a)
-#     mse = mean_squared_error(y_pred,y_test)
-#     rmse = np.sqrt(mse)
-#     print ("RMSE is ",rmse)
-#     plt.scatter(y_pred,y_test)
-#     plt.show()
-# #search_best_para()
-# #plot_bestpara_val()
-# #testresult()
-# =============================================================================
-
+#search_best_para()    #搜索参数时间太长，本程序中所使用参数为搜索得到的最优参数
+#plot_bestpara_val()
+testresult()
+#需要执行哪个程序将注释去掉即可
